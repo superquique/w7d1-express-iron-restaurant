@@ -1,7 +1,10 @@
 const express = require("express")
+const mongoose = require("mongoose")
 const logger = require("morgan")
 
+const Pizza = require("./models/Pizza.model")
 const pizzasArr = require("./data/pizzas")
+
 
 
 const app = express()
@@ -16,6 +19,14 @@ app.use(logger("dev"))
 // JSON middleware to parse incoming HTTP requests that contain JSON
 app.use(express.json());
 
+
+/*********************/
+/* Connect to the DB */
+/*********************/
+
+mongoose.connect("mongodb://127.0.0.1:27017/express-restaurant")
+    .then(x => console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`))
+    .catch(err => console.error("Error connecting to mongo", err));
 
 
 
@@ -40,6 +51,25 @@ app.get("/contact", (req, res, next) => {
     // res.send("")
     res.sendFile(__dirname + "/views/contact.html")
 })
+
+
+// POST /pizzas
+app.post("/pizzas", (req, res, next) => {
+    
+    const newPizza = req.body
+
+    Pizza.create(newPizza)
+        .then((pizzaFromDB) => {
+            res.status(201).json(pizzaFromDB)
+        })
+        .catch((err) => {
+            console.log("error creating a new pizza...\n\n", err)
+            res.status(500).json({ error: "Error creating a new pizza in the DB..." })
+        })
+})
+
+
+
 
 
 // GET /pizzas -- all pizzas
