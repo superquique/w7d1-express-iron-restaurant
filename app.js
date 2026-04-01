@@ -3,8 +3,6 @@ const mongoose = require("mongoose")
 const logger = require("morgan")
 
 const Pizza = require("./models/Pizza.model")
-const pizzasArr = require("./data/pizzas")
-
 
 
 const app = express()
@@ -53,7 +51,7 @@ app.get("/contact", (req, res, next) => {
 })
 
 
-// POST /pizzas
+// POST /pizzas -- Create a new pizza
 app.post("/pizzas", (req, res, next) => {
     
     const newPizza = req.body
@@ -70,40 +68,42 @@ app.post("/pizzas", (req, res, next) => {
 
 
 
-
-
-// GET /pizzas -- all pizzas
-// GET /pizzas?maxPrize=16 -- all pizzas with a max price of 16
+// GET /pizzas -- Get the list of pizzas
+// GET /pizzas?maxPrice=16 -- all pizzas with a max price of 16
 app.get("/pizzas", (req, res, next) => {
 
     let { maxPrice } = req.query
 
-    // if maxPrice is undefined, return an array with all the pizzas
-    if (maxPrice === undefined) {
-        res.json(pizzasArr)
-        return
+    let filter = {}
+
+    if (maxPrice !== undefined) {
+        filter = { price: { $lte: maxPrice } }
     }
 
-    // if we have maxPrice, then we return only the pizzas with that maxPrice
-    const result = pizzasArr.filter((element, i, arr) => {
-        return element.price <= parseFloat(maxPrice)
-    })
-
-    res.json(result)
+    Pizza.find(filter)
+        .then((pizzasFromDB) => {
+            res.json(pizzasFromDB)
+        })
+        .catch((err) => {
+            console.log("Error getting pizzas from DB... \n\n", err)
+            res.status(500).json({ error: "Failed to get list of pizzas" })
+        })
 })
 
 
-// GET /pizzas/:pizzaId
+// GET /pizzas/:pizzaId -- Get the details for one pizza
 app.get("/pizzas/:pizzaId", (req, res, next) => {
 
-    let { pizzaId } = req.params // note: we get pizzaId as a string
-    pizzaId = parseInt(pizzaId) // convert to an integer
+    const { pizzaId } = req.params
 
-    const result = pizzasArr.find((element, i, arr) => {
-        return element.id === pizzaId
-    })
-    
-    res.json(result)
+    Pizza.findById(pizzaId)
+        .then((pizzaFromDB) => {
+            res.json(pizzaFromDB)
+        })
+        .catch(err => {
+            console.log("Error getting pizza details from DB...\n\n", err);
+            res.status(500).json({ error: "Failed to get pizza details" });
+        })
 })
 
 
